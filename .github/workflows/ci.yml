@@ -1,0 +1,48 @@
+name: CI/CD para Reservación de Hotel
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18  # Update to a stable version
+
+      - name: Instalar dependencias
+        run: npm install
+
+      - name: Crear directorio public
+        run: mkdir -p public
+
+      - name: Crear archivo index.html
+        run: echo "<!DOCTYPE html><html><head><title>Hotel Reservation</title></head><body><h1>Hotel Reservation</h1></body></html>" > public/index.html
+
+      - name: Ejecutar pruebas unitarias con Vitest
+        run: npm run test
+
+      - name: Iniciar la aplicación
+        run: npm run dev &
+        env:
+          CI: true
+
+      - name: Ejecutar pruebas E2E con Cypress
+        uses: cypress-io/github-action@v6
+        with:
+          start: npm run dev
+          wait-on: "http://localhost:5173"
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
